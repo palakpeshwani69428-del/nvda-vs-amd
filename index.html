@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NVDA vs AMD — Head-to-Head Analysis | July 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --nvda: #76b900;
+    --amd: #ed1c24;
+    --bg: #0a0e1a;
+    --card: #111827;
+    --card2: #1a2235;
+    --border: #1e2d45;
+    --text: #e2e8f0;
+    --muted: #8899aa;
+    --gold: #f59e0b;
+    --blue: #3b82f6;
+    --teal: #14b8a6;
+    --purple: #8b5cf6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+
+  /* ── HEADER ── */
+  .hero {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0d1b2e 50%, #0a1628 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(118,185,0,.08) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 40% at 20% 100%, rgba(237,28,36,.06) 0%, transparent 60%);
+  }
+  .hero-badge { display: inline-block; background: rgba(59,130,246,.15); border: 1px solid rgba(59,130,246,.3); color: var(--blue); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 4px 14px; border-radius: 20px; margin-bottom: 20px; }
+  .hero h1 { font-size: clamp(28px,5vw,52px); font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+  .hero h1 span.nvda { color: var(--nvda); }
+  .hero h1 span.amd  { color: var(--amd); }
+  .hero-sub { color: var(--muted); font-size: 15px; max-width: 600px; margin: 0 auto 28px; }
+  .hero-meta { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; }
+  .hero-meta-item { text-align: center; }
+  .hero-meta-item .val { font-size: 22px; font-weight: 700; }
+  .hero-meta-item .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .nvda-val { color: var(--nvda); }
+  .amd-val  { color: var(--amd); }
+
+  /* ── LAYOUT ── */
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 20px; }
+  .section { padding: 48px 0; }
+  .section-title {
+    font-size: 22px; font-weight: 700; margin-bottom: 28px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::before { content: ''; display: block; width: 4px; height: 24px; border-radius: 2px; background: linear-gradient(180deg, var(--blue), var(--teal)); }
+
+  /* ── VERDICT BANNER ── */
+  .verdict-banner {
+    background: linear-gradient(135deg, #0d1f0d, #0a1a0a);
+    border: 2px solid var(--nvda);
+    border-radius: 16px;
+    padding: 32px;
+    margin: 32px 0;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .verdict-icon { font-size: 56px; flex-shrink: 0; }
+  .verdict-text h2 { font-size: 26px; font-weight: 800; color: var(--nvda); margin-bottom: 8px; }
+  .verdict-text p { color: var(--muted); font-size: 14px; max-width: 700px; }
+  .verdict-score {
+    margin-left: auto;
+    text-align: center;
+    background: rgba(118,185,0,.1);
+    border: 1px solid rgba(118,185,0,.3);
+    border-radius: 12px;
+    padding: 16px 28px;
+    flex-shrink: 0;
+  }
+  .verdict-score .score { font-size: 42px; font-weight: 900; color: var(--nvda); }
+  .verdict-score .score-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ── SCORECARD ── */
+  .scorecard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .score-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: transform .2s;
+  }
+  .score-card:hover { transform: translateY(-2px); }
+  .score-card .cat { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .score-card .winner { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .score-card .reason { font-size: 12px; color: var(--muted); }
+  .win-nvda { border-top: 3px solid var(--nvda); }
+  .win-amd  { border-top: 3px solid var(--amd); }
+  .win-tie  { border-top: 3px solid var(--gold); }
+
+  /* ── COMPARISON TABLE ── */
+  .comp-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .comp-table th {
+    background: var(--card2);
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .comp-table th.nvda-col { color: var(--nvda); }
+  .comp-table th.amd-col  { color: var(--amd); }
+  .comp-table td { padding: 13px 16px; border-bottom: 1px solid rgba(30,45,69,.5); }
+  .comp-table tr:hover td { background: rgba(255,255,255,.02); }
+  .comp-table .metric-name { color: var(--muted); font-size: 13px; }
+  .comp-table .val-cell { font-weight: 600; font-size: 14px; }
+  .comp-table .winner-cell { color: var(--gold); font-size: 11px; font-weight: 700; }
+  .badge-nvda { background: rgba(118,185,0,.15); color: var(--nvda); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .badge-amd  { background: rgba(237,28,36,.15); color: var(--amd);  padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .badge-tie  { background: rgba(245,158,11,.15); color: var(--gold); padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+
+  /* ── CHART CARDS ── */
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 24px; }
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .chart-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .chart-card .chart-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .chart-wrap { position: relative; height: 280px; }
+
+  /* ── METRIC CARDS ── */
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; }
+  .metric-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .metric-card .m-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .metric-card .m-nvda { font-size: 20px; font-weight: 700; color: var(--nvda); }
+  .metric-card .m-amd  { font-size: 20px; font-weight: 700; color: var(--amd); }
+  .metric-card .m-sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── PRICE TRACKER ── */
+  .price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .price-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .price-card .ticker { font-size: 13px; font-weight: 700; letter-spacing: 2px; margin-bottom: 4px; }
+  .price-card .price  { font-size: 36px; font-weight: 800; margin-bottom: 16px; }
+  .price-bar { margin-bottom: 12px; }
+  .price-bar .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .price-bar .bar-track { height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; position: relative; }
+  .price-bar .bar-fill  { height: 100%; border-radius: 3px; }
+  .price-bar .bar-dot   { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bg); }
+  .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(30,45,69,.5); font-size: 13px; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .s-label { color: var(--muted); }
+  .stat-row .s-val   { font-weight: 600; }
+
+  /* ── CATALYST SECTION ── */
+  .catalyst-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .catalyst-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .catalyst-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .catalyst-item { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+  .catalyst-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .ci-nvda { background: rgba(118,185,0,.15); }
+  .ci-amd  { background: rgba(237,28,36,.15); }
+  .catalyst-item .ci-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .catalyst-item .ci-desc  { font-size: 12px; color: var(--muted); }
+
+  /* ── RISK TABLE ── */
+  .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .risk-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .risk-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .risk-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .risk-item p { font-size: 13px; color: var(--muted); }
+  .risk-item strong { color: var(--text); }
+
+  /* ── FOOTER ── */
+  .footer {
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 32px 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 48px;
+  }
+  .disclaimer {
+    background: rgba(245,158,11,.06);
+    border: 1px solid rgba(245,158,11,.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 32px 0;
+    font-size: 13px;
+    color: #c9a227;
+  }
+  .disclaimer strong { color: var(--gold); }
+
+  /* ── PROGRESS BARS ── */
+  .progress-row { margin-bottom: 14px; }
+  .progress-row .pr-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .progress-row .pr-label { color: var(--muted); }
+  .progress-track { height: 8px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+
+  /* ── TABS ── */
+  .tab-nav { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 4px; margin-bottom: 24px; width: fit-content; }
+  .tab-btn { padding: 8px 20px; border-radius: 7px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .tab-btn.active { background: var(--card2); color: var(--text); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .chart-grid, .price-row, .catalyst-grid, .risk-grid { grid-template-columns: 1fr; }
+    .verdict-banner { flex-direction: column; }
+    .verdict-score { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-badge">Semiconductor Deep Dive · July 2026</div>
+  <h1><span class="nvda">NVDA</span> vs <span class="amd">AMD</span></h1>
+  <p class="hero-sub">Comprehensive head-to-head analysis across valuation, fundamentals, technicals, and competitive positioning for the next 12 months</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <div class="val nvda-val">$206.84</div>
+      <div class="lbl">NVDA Price</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="val amd-val">$521.95</div>
+      <div class="lbl">AMD Price</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="val" style="color:var(--blue)">$5.01T</div>
+      <div class="lbl">NVDA Mkt Cap</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="val" style="color:var(--purple)">$851B</div>
+      <div class="lbl">AMD Mkt Cap</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="val" style="color:var(--teal)">~80%</div>
+      <div class="lbl">NVDA AI GPU Share</div>
+    </div>
+    <div class="hero-meta-item">
+      <div class="val" style="color:var(--gold)">~6%</div>
+      <div class="lbl">AMD AI GPU Share</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════ VERDICT -->
+<div class="section">
+  <div class="section-title">🏆 12-Month Verdict</div>
+
+  <div class="verdict-banner">
+    <div class="verdict-icon">🟢</div>
+    <div class="verdict-text">
+      <h2>NVIDIA (NVDA) — Better Positioned for Next 12 Months</h2>
+      <p>NVDA wins on profitability, market dominance, and risk-adjusted return. With 80% AI GPU market share, $253B TTM revenue, 63% net margins, and a $1T+ Blackwell/Vera Rubin order pipeline, NVIDIA's moat is unmatched. AMD is a compelling growth story with 114% YTD gains and major hyperscaler contracts, but its premium valuation (P/E 175x vs NVDA 31x) and thinner margins make NVDA the superior risk-adjusted choice for the next 12 months.</p>
+    </div>
+    <div class="verdict-score">
+      <div class="score">NVDA</div>
+      <div class="score-lbl">12-Month Pick</div>
+    </div>
+  </div>
+
+  <!-- SCORECARD -->
+  <div class="scorecard-grid">
+    <div class="score-card win-nvda">
+      <div class="cat">Valuation</div>
+      <div class="winner nvda-val">NVDA</div>
+      <div class="reason">P/E 31x vs AMD 175x — far cheaper on earnings</div>
+    </div>
+    <div class="score-card win-nvda">
+      <div class="cat">Profitability</div>
+      <div class="winner nvda-val">NVDA</div>
+      <div class="reason">63% net margin vs AMD 13.4%</div>
+    </div>
+    <div class="score-card win-nvda">
+      <div class="cat">Revenue Scale</div>
+      <div class="winner nvda-val">NVDA</div>
+      <div class="reason">$253B TTM vs AMD $37B — 6.8x larger</div>
+    </div>
+    <div class="score-card win-amd">
+      <div class="cat">Revenue Growth Rate</div>
+      <div class="winner amd-val">AMD</div>
+      <div class="reason">38% YoY vs NVDA 65% — AMD accelerating faster from lower base</div>
+    </div>
+    <div class="score-card win-nvda">
+      <div class="cat">Technical Momentum</div>
+      <div class="winner nvda-val">NVDA</div>
+      <div class="reason">RSI 51 neutral; above 50/200-day MAs</div>
+    </div>
+    <div class="score-card win-amd">
+      <div class="cat">YTD Performance</div>
+      <div class="winner amd-val">AMD</div>
+      <div class="reason">+114% YTD vs NVDA +18% — AMD outperformed</div>
+    </div>
+    <div class="score-card win-nvda">
+      <div class="cat">Analyst Consensus</div>
+      <div class="winner nvda-val">NVDA</div>
+      <div class="reason">50 Buy/Strong Buy vs AMD 42 — stronger conviction</div>
+    </div>
+    <div class="score-card win-nvda">
+      <div class="cat">Market Position</div>
+      <div class="winner nvda-val">NVDA</div>
+      <div class="reason">~80% AI GPU share vs AMD ~6%</div>
+    </div>
+    <div class="score-card win-nvda">
+      <div class="cat">Balance Sheet</div>
+      <div class="winner nvda-val">NVDA</div>
+      <div class="reason">$195B equity, minimal debt vs AMD $4.5B debt</div>
+    </div>
+    <div class="score-card win-amd">
+      <div class="cat">Upside Potential</div>
+      <div class="winner amd-val">AMD</div>
+      <div class="reason">Smaller base + Meta/OpenAI contracts = higher % upside</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ SECTION 1: VALUATION -->
+<div class="section">
+  <div class="section-title">📊 Section 1 — Valuation Metrics Comparison</div>
+
+  <div class="chart-grid" style="margin-bottom:28px;">
+    <div class="chart-card">
+      <h3>P/E Ratio Comparison</h3>
+      <div class="chart-sub">Trailing vs Forward P/E — lower is cheaper on earnings</div>
+      <div class="chart-wrap">
+        <canvas id="peChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Valuation Multiples Radar</h3>
+      <div class="chart-sub">Normalized scores across 5 key valuation metrics</div>
+      <div class="chart-wrap">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th class="nvda-col">🟢 NVDA</th>
+          <th class="amd-col">🔴 AMD</th>
+          <th>Winner</th>
+          <th>Commentary</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="metric-name">Trailing P/E</td>
+          <td class="val-cell nvda-val">31.6x</td>
+          <td class="val-cell amd-val">175.2x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+          <td style="font-size:12px;color:var(--muted)">NVDA trades at a massive discount on trailing earnings</td>
+        </tr>
+        <tr>
+          <td class="metric-name">Forward P/E</td>
+          <td class="val-cell nvda-val">23.6x</td>
+          <td class="val-cell amd-val">74.1x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+          <td style="font-size:12px;color:var(--muted)">NVDA's forward multiple reflects earnings power; AMD priced for perfection</td>
+        </tr>
+        <tr>
+          <td class="metric-name">PEG Ratio</td>
+          <td class="val-cell nvda-val">0.57</td>
+          <td class="val-cell amd-val">1.25</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+          <td style="font-size:12px;color:var(--muted)">NVDA PEG &lt;1 = undervalued relative to growth; AMD PEG &gt;1 = premium</td>
+        </tr>
+        <tr>
+          <td class="metric-name">EV/EBITDA</td>
+          <td class="val-cell nvda-val">25.6x</td>
+          <td class="val-cell amd-val">104.2x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+          <td style="font-size:12px;color:var(--muted)">NVDA's EBITDA generation makes it far cheaper on enterprise value</td>
+        </tr>
+        <tr>
+          <td class="metric-name">EV/Revenue</td>
+          <td class="val-cell nvda-val">19.5x</td>
+          <td class="val-cell amd-val">22.5x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+          <td style="font-size:12px;color:var(--muted)">NVDA cheaper on revenue despite 6.8x larger revenue base</td>
+        </tr>
+        <tr>
+          <td class="metric-name">P/S Ratio (TTM)</td>
+          <td class="val-cell nvda-val">19.8x</td>
+          <td class="val-cell amd-val">22.9x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+          <td style="font-size:12px;color:var(--muted)">NVDA cheaper on sales despite dominant market position</td>
+        </tr>
+        <tr>
+          <td class="metric-name">P/B Ratio</td>
+          <td class="val-cell nvda-val">25.6x</td>
+          <td class="val-cell amd-val">13.2x</td>
+          <td><span class="badge-amd">AMD</span></td>
+          <td style="font-size:12px;color:var(--muted)">AMD cheaper on book value; NVDA's equity base is growing rapidly</td>
+        </tr>
+        <tr>
+          <td class="metric-name">Market Cap</td>
+          <td class="val-cell nvda-val">$5.01T</td>
+          <td class="val-cell amd-val">$851B</td>
+          <td><span class="badge-tie">Context</span></td>
+          <td style="font-size:12px;color:var(--muted)">NVDA is 5.9x larger; AMD has more room to grow in % terms</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ SECTION 2: REVENUE & MARGINS -->
+<div class="section">
+  <div class="section-title">💰 Section 2 — Revenue Growth & Profitability</div>
+
+  <div class="chart-grid" style="margin-bottom:28px;">
+    <div class="chart-card">
+      <h3>Annual Revenue Growth (USD Billions)</h3>
+      <div class="chart-sub">FY2022–FY2026 — NVDA fiscal year ends January</div>
+      <div class="chart-wrap">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Profit Margin Comparison (%)</h3>
+      <div class="chart-sub">Gross, Operating & Net margins — TTM basis</div>
+      <div class="chart-wrap">
+        <canvas id="marginChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARGIN PROGRESS BARS -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
+    <div class="chart-card">
+      <h3 style="margin-bottom:20px;">🟢 NVDA Margin Profile</h3>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">Gross Margin</span><span style="color:var(--nvda);font-weight:700">74.2%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:74.2%;background:var(--nvda);"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">Operating Margin</span><span style="color:var(--nvda);font-weight:700">65.6%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:65.6%;background:var(--nvda);"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">Net Profit Margin</span><span style="color:var(--nvda);font-weight:700">63.0%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:63%;background:var(--nvda);"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">ROE</span><span style="color:var(--nvda);font-weight:700">114.3%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:100%;background:linear-gradient(90deg,var(--nvda),var(--teal));"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">ROA</span><span style="color:var(--nvda);font-weight:700">52.7%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:52.7%;background:var(--nvda);"></div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3 style="margin-bottom:20px;">🔴 AMD Margin Profile</h3>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">Gross Margin</span><span style="color:var(--amd);font-weight:700">49.5%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:49.5%;background:var(--amd);"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">Operating Margin</span><span style="color:var(--amd);font-weight:700">14.4%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:14.4%;background:var(--amd);"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">Net Profit Margin</span><span style="color:var(--amd);font-weight:700">13.4%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:13.4%;background:var(--amd);"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">ROE</span><span style="color:var(--amd);font-weight:700">8.1%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:8.1%;background:var(--amd);"></div></div>
+      </div>
+      <div class="progress-row">
+        <div class="pr-header"><span class="pr-label">ROA</span><span style="color:var(--amd);font-weight:700">3.7%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:3.7%;background:var(--amd);"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th class="nvda-col">🟢 NVDA</th>
+          <th class="amd-col">🔴 AMD</th>
+          <th>Winner</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="metric-name">TTM Revenue</td>
+          <td class="val-cell nvda-val">$253.5B</td>
+          <td class="val-cell amd-val">$37.5B</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Revenue YoY Growth</td>
+          <td class="val-cell nvda-val">+65.4%</td>
+          <td class="val-cell amd-val">+37.8%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Latest Qtr Revenue</td>
+          <td class="val-cell nvda-val">$81.6B (Q1 FY27)</td>
+          <td class="val-cell amd-val">$10.3B (Q1 2026)</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Gross Margin</td>
+          <td class="val-cell nvda-val">74.2%</td>
+          <td class="val-cell amd-val">49.5%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Operating Margin</td>
+          <td class="val-cell nvda-val">65.6%</td>
+          <td class="val-cell amd-val">14.4%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Net Profit Margin</td>
+          <td class="val-cell nvda-val">63.0%</td>
+          <td class="val-cell amd-val">13.4%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">TTM Net Income</td>
+          <td class="val-cell nvda-val">$159.7B</td>
+          <td class="val-cell amd-val">$5.0B</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">EPS (TTM)</td>
+          <td class="val-cell nvda-val">$6.54</td>
+          <td class="val-cell amd-val">$2.98</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Qtrly Earnings Growth YoY</td>
+          <td class="val-cell nvda-val">+214.5%</td>
+          <td class="val-cell amd-val">+91.2%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">R&D Spend (Annual)</td>
+          <td class="val-cell nvda-val">$18.5B</td>
+          <td class="val-cell amd-val">$8.1B</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ SECTION 3: TECHNICALS -->
+<div class="section">
+  <div class="section-title">📈 Section 3 — Technical Price Action</div>
+
+  <div class="price-row" style="margin-bottom:28px;">
+    <!-- NVDA Price Card -->
+    <div class="price-card">
+      <div class="ticker" style="color:var(--nvda)">NVDA — NVIDIA</div>
+      <div class="price" style="color:var(--nvda)">$206.84</div>
+      <div class="price-bar">
+        <div class="bar-label"><span>52W Low: $163.85</span><span>52W High: $236.26</span></div>
+        <div class="bar-track" style="background:rgba(118,185,0,.1);">
+          <div class="bar-fill" style="width:59%;background:linear-gradient(90deg,rgba(118,185,0,.3),var(--nvda));"></div>
+          <div class="bar-dot" style="left:59%;background:var(--nvda);"></div>
+        </div>
+      </div>
+      <div class="stat-row"><span class="s-label">Current Price</span><span class="s-val" style="color:var(--nvda)">$206.84</span></div>
+      <div class="stat-row"><span class="s-label">vs 52W High</span><span class="s-val" style="color:#f87171">-12.4%</span></div>
+      <div class="stat-row"><span class="s-label">vs 52W Low</span><span class="s-val" style="color:#4ade80">+26.2%</span></div>
+      <div class="stat-row"><span class="s-label">50-Day MA</span><span class="s-val">$209.18 <span style="color:#f87171;font-size:11px">▼ Below</span></span></div>
+      <div class="stat-row"><span class="s-label">200-Day MA</span><span class="s-val">$192.91 <span style="color:#4ade80;font-size:11px">▲ Above</span></span></div>
+      <div class="stat-row"><span class="s-label">RSI (14-day)</span><span class="s-val">51.1 — Neutral</span></div>
+      <div class="stat-row"><span class="s-label">Beta</span><span class="s-val">2.21</span></div>
+      <div class="stat-row"><span class="s-label">Trend</span><span class="s-val" style="color:#fbbf24">Consolidating</span></div>
+    </div>
+    <!-- AMD Price Card -->
+    <div class="price-card">
+      <div class="ticker" style="color:var(--amd)">AMD — Advanced Micro Devices</div>
+      <div class="price" style="color:var(--amd)">$521.95</div>
+      <div class="price-bar">
+        <div class="bar-label"><span>52W Low: $149.22</span><span>52W High: $584.73</span></div>
+        <div class="bar-track" style="background:rgba(237,28,36,.1);">
+          <div class="bar-fill" style="width:86%;background:linear-gradient(90deg,rgba(237,28,36,.3),var(--amd));"></div>
+          <div class="bar-dot" style="left:86%;background:var(--amd);"></div>
+        </div>
+      </div>
+      <div class="stat-row"><span class="s-label">Current Price</span><span class="s-val" style="color:var(--amd)">$521.95</span></div>
+      <div class="stat-row"><span class="s-label">vs 52W High</span><span class="s-val" style="color:#f87171">-10.7%</span></div>
+      <div class="stat-row"><span class="s-label">vs 52W Low</span><span class="s-val" style="color:#4ade80">+249.8%</span></div>
+      <div class="stat-row"><span class="s-label">50-Day MA</span><span class="s-val">$508.48 <span style="color:#4ade80;font-size:11px">▲ Above</span></span></div>
+      <div class="stat-row"><span class="s-label">200-Day MA</span><span class="s-val">$305.68 <span style="color:#4ade80;font-size:11px">▲ Above</span></span></div>
+      <div class="stat-row"><span class="s-label">RSI (14-day)</span><span class="s-val">50.0 — Neutral</span></div>
+      <div class="stat-row"><span class="s-label">Beta</span><span class="s-val">2.47</span></div>
+      <div class="stat-row"><span class="s-label">Trend</span><span class="s-val" style="color:#4ade80">Strong Uptrend</span></div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>1-Year Price Performance</h3>
+      <div class="chart-sub">NVDA vs AMD normalized to 100 (Jul 2025 = 100)</div>
+      <div class="chart-wrap">
+        <canvas id="priceChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>RSI Comparison (60-Day)</h3>
+      <div class="chart-sub">Relative Strength Index — 70 overbought / 30 oversold</div>
+      <div class="chart-wrap">
+        <canvas id="rsiChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ SECTION 4: FUNDAMENTALS -->
+<div class="section">
+  <div class="section-title">🏗️ Section 4 — Fundamental Strengths & Catalysts</div>
+
+  <div class="catalyst-grid" style="margin-bottom:28px;">
+    <div class="catalyst-card">
+      <h3><span style="color:var(--nvda)">🟢 NVIDIA</span> — Key Catalysts</h3>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-nvda">🚀</div>
+        <div>
+          <div class="ci-title">Blackwell & Vera Rubin Architecture</div>
+          <div class="ci-desc">$1T+ order pipeline for Blackwell GPUs; Vera Rubin (next-gen) announced for 2026-2027. Sold out through 2026.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-nvda">🏭</div>
+        <div>
+          <div class="ci-title">Data Center Dominance</div>
+          <div class="ci-desc">$193.7B FY2026 data center revenue (+92% YoY in Q1 FY27). 80% AI accelerator market share.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-nvda">🔒</div>
+        <div>
+          <div class="ci-title">CUDA Software Moat</div>
+          <div class="ci-desc">15+ year CUDA ecosystem lock-in. 50-55% MFU vs AMD's ~45%. Switching costs are enormous.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-nvda">🤖</div>
+        <div>
+          <div class="ci-title">Physical AI & Robotics</div>
+          <div class="ci-desc">Omniverse, Isaac robotics platform, automotive (DRIVE). New TAM beyond data center.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-nvda">💡</div>
+        <div>
+          <div class="ci-title">Silicon Photonics</div>
+          <div class="ci-desc">$4B photonics investments (Coherent, Lumentum). Next-gen interconnect for AI clusters.</div>
+        </div>
+      </div>
+    </div>
+    <div class="catalyst-card">
+      <h3><span style="color:var(--amd)">🔴 AMD</span> — Key Catalysts</h3>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-amd">🤝</div>
+        <div>
+          <div class="ci-title">Meta & OpenAI Mega-Contracts</div>
+          <div class="ci-desc">6-gigawatt GPU deals with Meta and OpenAI. Meta deal could add $100B to top line per WSJ. MI450 shipments H2 2026.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-amd">📈</div>
+        <div>
+          <div class="ci-title">Data Center Acceleration</div>
+          <div class="ci-desc">Q1 2026 data center revenue $5.8B (+57% YoY). Q2 guidance $11.2B (+46% YoY). Rapid ramp.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-amd">💻</div>
+        <div>
+          <div class="ci-title">CPU Server Market Leadership</div>
+          <div class="ci-desc">EPYC processors dominate server CPU market. Natural synergy with MI-series AI accelerators.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-amd">🎮</div>
+        <div>
+          <div class="ci-title">Gaming & Client Recovery</div>
+          <div class="ci-desc">Radeon GPU refresh cycle + PC market recovery. Diversified revenue beyond data center.</div>
+        </div>
+      </div>
+      <div class="catalyst-item">
+        <div class="catalyst-icon ci-amd">🏎️</div>
+        <div>
+          <div class="ci-title">MI350X / MI450 Roadmap</div>
+          <div class="ci-desc">MI350X matches B200 on FP8 compute (4,600 TFLOPS), exceeds on memory (288GB vs 192GB HBM3E).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYST RATINGS CHART -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Analyst Rating Distribution</h3>
+      <div class="chart-sub">Current consensus from Wall Street analysts</div>
+      <div class="chart-wrap">
+        <canvas id="analystChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Key Fundamental Metrics</h3>
+      <div class="chart-sub">Side-by-side comparison of balance sheet strength</div>
+      <div class="chart-wrap">
+        <canvas id="fundamentalChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ SECTION 5: FULL COMPARISON TABLE -->
+<div class="section">
+  <div class="section-title">📋 Section 5 — Complete Head-to-Head Scorecard</div>
+
+  <div style="overflow-x:auto;">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Metric</th>
+          <th class="nvda-col">🟢 NVDA</th>
+          <th class="amd-col">🔴 AMD</th>
+          <th>Edge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- VALUATION -->
+        <tr style="background:rgba(59,130,246,.04)">
+          <td rowspan="6" style="font-weight:700;color:var(--blue);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Valuation</td>
+          <td class="metric-name">Trailing P/E</td>
+          <td class="val-cell nvda-val">31.6x</td>
+          <td class="val-cell amd-val">175.2x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Forward P/E</td>
+          <td class="val-cell nvda-val">23.6x</td>
+          <td class="val-cell amd-val">74.1x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">PEG Ratio</td>
+          <td class="val-cell nvda-val">0.57</td>
+          <td class="val-cell amd-val">1.25</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">EV/EBITDA</td>
+          <td class="val-cell nvda-val">25.6x</td>
+          <td class="val-cell amd-val">104.2x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">EV/Revenue</td>
+          <td class="val-cell nvda-val">19.5x</td>
+          <td class="val-cell amd-val">22.5x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">P/S Ratio</td>
+          <td class="val-cell nvda-val">19.8x</td>
+          <td class="val-cell amd-val">22.9x</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <!-- GROWTH -->
+        <tr style="background:rgba(20,184,166,.04)">
+          <td rowspan="4" style="font-weight:700;color:var(--teal);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Growth</td>
+          <td class="metric-name">Revenue YoY</td>
+          <td class="val-cell nvda-val">+65.4%</td>
+          <td class="val-cell amd-val">+37.8%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Earnings Growth YoY</td>
+          <td class="val-cell nvda-val">+214.5%</td>
+          <td class="val-cell amd-val">+91.2%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">FY2026 EPS Est.</td>
+          <td class="val-cell nvda-val">~$8.76</td>
+          <td class="val-cell amd-val">$7.50</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">YTD Stock Return</td>
+          <td class="val-cell nvda-val">+18%</td>
+          <td class="val-cell amd-val">+114%</td>
+          <td><span class="badge-amd">AMD</span></td>
+        </tr>
+        <!-- PROFITABILITY -->
+        <tr style="background:rgba(139,92,246,.04)">
+          <td rowspan="4" style="font-weight:700;color:var(--purple);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Profitability</td>
+          <td class="metric-name">Gross Margin</td>
+          <td class="val-cell nvda-val">74.2%</td>
+          <td class="val-cell amd-val">49.5%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Operating Margin</td>
+          <td class="val-cell nvda-val">65.6%</td>
+          <td class="val-cell amd-val">14.4%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Net Margin</td>
+          <td class="val-cell nvda-val">63.0%</td>
+          <td class="val-cell amd-val">13.4%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">ROE</td>
+          <td class="val-cell nvda-val">114.3%</td>
+          <td class="val-cell amd-val">8.1%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <!-- TECHNICALS -->
+        <tr style="background:rgba(245,158,11,.04)">
+          <td rowspan="5" style="font-weight:700;color:var(--gold);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Technicals</td>
+          <td class="metric-name">Current Price</td>
+          <td class="val-cell nvda-val">$206.84</td>
+          <td class="val-cell amd-val">$521.95</td>
+          <td><span class="badge-tie">N/A</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">vs 50-Day MA</td>
+          <td class="val-cell" style="color:#f87171">-1.1% Below</td>
+          <td class="val-cell" style="color:#4ade80">+2.6% Above</td>
+          <td><span class="badge-amd">AMD</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">vs 200-Day MA</td>
+          <td class="val-cell" style="color:#4ade80">+7.2% Above</td>
+          <td class="val-cell" style="color:#4ade80">+70.7% Above</td>
+          <td><span class="badge-amd">AMD</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">RSI (14-day)</td>
+          <td class="val-cell nvda-val">51.1</td>
+          <td class="val-cell amd-val">50.0</td>
+          <td><span class="badge-tie">Neutral</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Beta</td>
+          <td class="val-cell nvda-val">2.21</td>
+          <td class="val-cell amd-val">2.47</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <!-- ANALYST -->
+        <tr style="background:rgba(59,130,246,.04)">
+          <td rowspan="3" style="font-weight:700;color:var(--blue);font-size:12px;text-transform:uppercase;letter-spacing:1px;">Analyst</td>
+          <td class="metric-name">Buy/Strong Buy</td>
+          <td class="val-cell nvda-val">58 of 61</td>
+          <td class="val-cell amd-val">42 of 51</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Avg Price Target</td>
+          <td class="val-cell nvda-val">$302.83</td>
+          <td class="val-cell amd-val">$573.15</td>
+          <td><span class="badge-tie">Context</span></td>
+        </tr>
+        <tr>
+          <td class="metric-name">Implied Upside</td>
+          <td class="val-cell nvda-val">+46.4%</td>
+          <td class="val-cell amd-val">+9.8%</td>
+          <td><span class="badge-nvda">NVDA</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ RISKS -->
+<div class="section">
+  <div class="section-title">⚠️ Risk Assessment</div>
+  <div class="risk-grid">
+    <div class="risk-card">
+      <h3 style="color:var(--nvda);margin-bottom:16px;">🟢 NVDA — Key Risks</h3>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#f87171;"></div>
+        <p><strong>Export Controls:</strong> US-China AI chip restrictions could limit $10-15B in potential revenue. Ongoing geopolitical risk.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#f87171;"></div>
+        <p><strong>Custom Silicon Competition:</strong> Broadcom ($20B+ AI ASIC revenue), Google TPU, AWS Trainium eating into hyperscaler share.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#fbbf24;"></div>
+        <p><strong>Valuation at Scale:</strong> $5T market cap leaves less room for multiple expansion; any miss could trigger sharp selloff.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#fbbf24;"></div>
+        <p><strong>Supply Chain:</strong> TSMC concentration risk; CoWoS packaging bottlenecks could limit Blackwell ramp.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#4ade80;"></div>
+        <p><strong>Beta 2.21:</strong> High market sensitivity — macro downturn would amplify losses vs broader market.</p>
+      </div>
+    </div>
+    <div class="risk-card">
+      <h3 style="color:var(--amd);margin-bottom:16px;">🔴 AMD — Key Risks</h3>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#f87171;"></div>
+        <p><strong>Extreme Valuation:</strong> P/E 175x, EV/EBITDA 104x — priced for perfection. Any execution miss = severe correction.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#f87171;"></div>
+        <p><strong>CUDA Ecosystem Gap:</strong> Software maturity (45% MFU vs NVDA 55%) remains a real barrier for AI training workloads.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#fbbf24;"></div>
+        <p><strong>Contract Execution Risk:</strong> Meta/OpenAI deals are large but unproven at scale. Deployment delays could disappoint.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#fbbf24;"></div>
+        <p><strong>Thin Margins:</strong> 13.4% net margin vs NVDA 63% — limited buffer if competition intensifies or pricing pressure emerges.</p>
+      </div>
+      <div class="risk-item">
+        <div class="risk-dot" style="background:#4ade80;"></div>
+        <p><strong>Beta 2.47:</strong> Higher volatility than NVDA — AMD amplifies both upside and downside moves.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ DISCLAIMER -->
+<div class="disclaimer">
+  <strong>⚠️ Investment Disclaimer:</strong> As an AI Agent, I cannot provide legally protected, personalized investment advice. This analysis is for informational purposes only and does not constitute investment advice or recommendations. All data sourced from public financial filings, market data providers, and analyst reports as of July 27, 2026. Past performance does not guarantee future results. Consult a licensed financial advisor before making investment decisions.
+</div>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════════════════════════════════════════ SIGNATURE: SENTINEL SOC -->
+<div class="footer">
+  <p style="margin-bottom:8px;font-weight:600;color:var(--text)">NVDA vs AMD Head-to-Head Analysis</p>
+  <p>Data as of July 27, 2026 · Sources: Company filings, Alpha Vantage, Wall Street analyst consensus, Silicon Analysts, IDC</p>
+  <p style="margin-top:8px;">Generated by AI Stock Assistant · For informational purposes only</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ PUSH VERIFICATION -->
+<script>
+const nvdaColor = '#76b900';
+const amdColor  = '#ed1c24';
+const gridColor = 'rgba(255,255,255,0.05)';
+const textColor = '#8899aa';
+
+Chart.defaults.color = textColor;
+Chart.defaults.borderColor = gridColor;
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif"";
+
+// ── 1. P/E CHART ──
+new Chart(document.getElementById('peChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Trailing P/E', 'Forward P/E', 'PEG Ratio (10)', 'EV/EBITDA'],
+    datasets: [
+      { label: 'NVDA', data: [31.6, 23.6, 5.7, 25.6], backgroundColor: 'rgba(118,185,0,0.7)', borderColor: nvdaColor, borderWidth: 2, borderRadius: 6 },
+      { label: 'AMD',  data: [175.2, 74.1, 12.5, 104.2], backgroundColor: 'rgba(237,28,36,0.7)', borderColor: amdColor, borderWidth: 2, borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, beginAtZero: true }
+    }
+  }
+});
+
+// ── 2. RADAR CHART ──
+new Chart(document.getElementById('radarChart'), {
+  type: 'radar',
+  data: {
+    labels: ['Valuation\n(lower=better)', 'Profitability', 'Growth', 'Market Share', 'Balance Sheet'],
+    datasets: [
+      { label: 'NVDA', data: [90, 95, 85, 95, 90], backgroundColor: 'rgba(118,185,0,0.15)', borderColor: nvdaColor, borderWidth: 2, pointBackgroundColor: nvdaColor },
+      { label: 'AMD',  data: [25, 45, 75, 30, 60], backgroundColor: 'rgba(237,28,36,0.15)', borderColor: amdColor, borderWidth: 2, pointBackgroundColor: amdColor }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      r: {
+        grid: { color: gridColor },
+        angleLines: { color: gridColor },
+        ticks: { display: false },
+        min: 0, max: 100
+      }
+    }
+  }
+});
+
+// ── 3. REVENUE CHART ──
+new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: {
+    labels: ['FY2022', 'FY2023', 'FY2024', 'FY2025', 'FY2026'],
+    datasets: [
+      { label: 'NVDA ($B)', data: [26.9, 27.0, 60.9, 130.5, 215.9], backgroundColor: 'rgba(118,185,0,0.7)', borderColor: nvdaColor, borderWidth: 2, borderRadius: 6 },
+      { label: 'AMD ($B)',  data: [23.6, 22.7, 25.8, 34.6, 37.5], backgroundColor: 'rgba(237,28,36,0.7)', borderColor: amdColor, borderWidth: 2, borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, beginAtZero: true, ticks: { callback: v => '$' + v + 'B' } }
+    }
+  }
+});
+
+// ── 4. MARGIN CHART  ──
+new Chart(document.getElementById('marginChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Gross Margin', 'Operating Margin', 'Net Margin', 'ROE', 'ROA'],
+    datasets: [
+      { label: 'NVDA (%)', data: [74.2, 65.6, 63.0, 114.3, 52.7], backgroundColor: 'rgba(118,185,0,0.7)', borderColor: nvdaColor, borderWidth: 2, borderRadius: 6 },
+      { label: 'AMD (%)',  data: [49.5, 14.4, 13.4, 8.1, 3.7], backgroundColor: 'rgba(237,28,36,0.7)', borderColor: amdColor, borderWidth: 2, borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, beginAtZero: true, ticks: { callback: v => v + '%' } }
+    }
+  }
+});
+
+// ── 5. PRICE PERFORMANCE (normalized) ──
+// Monthly sampled data points (normalized to 100 at Jul 2025)
+const months = ['Jul\'25','Aug','Sep','Oct','Nov','Dec','Jan\'26','Feb','Mar','Apr','May','Jun','Jul\'26'];
+const nvdaNorm = [100, 101.5, 97.5, 107.5, 108.5, 107.5, 107.5, 107.5, 101.5, 113.5, 124.5, 119.5, 118.5];
+const amdNorm  = [100, 97.5, 91.5, 133.5, 138.5, 122.5, 127.5, 115.5, 115.5, 155.5, 260.5, 308.5, 300.5];
+
+new Chart(document.getElementById('priceChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'NVDA (Base 100)', data: nvdaNorm, borderColor: nvdaColor, backgroundColor: 'rgba(118,185,0,0.08)', borderWidth: 2.5, fill: true, tension: 0.4, pointRadius: 3 },
+      { label: 'AMD (Base 100)',  data: amdNorm,  borderColor: amdColor,  backgroundColor: 'rgba(237,28,36,0.08)',  borderWidth: 2.5, fill: true, tension: 0.4, pointRadius: 3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, ticks: { callback: v => v } }
+    }
+  }
+});
+
+// ── 6. RSI CHART ──
+const rsiDates = ['5/28','6/1','6/5','6/9','6/12','6/15','6/18','6/22','6/25','6/29','7/2','7/6','7/9','7/13','7/16','7/20','7/24'];
+const nvdaRsi  = [52.6, 60.4, 44.0, 46.5, 45.4, 51.4, 50.5, 48.8, 39.7, 40.2, 41.2, 42.0, 49.7, 56.4, 52.1, 48.6, 51.1];
+const amdRsi   = [76.7, 73.7, 54.5, 55.3, 60.5, 65.2, 61.2, 63.1, 56.1, 59.0, 52.3, 57.4, 55.9, 55.2, 46.9, 47.6, 50.0];
+
+new Chart(document.getElementById('rsiChart'), {
+  type: 'line',
+  data: {
+    labels: rsiDates,
+    datasets: [
+      { label: 'NVDA RSI', data: nvdaRsi, borderColor: nvdaColor, backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, pointRadius: 2 },
+      { label: 'AMD RSI',  data: amdRsi,  borderColor: amdColor,  backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, pointRadius: 2 },
+      { label: 'Overbought (70)', data: Array(rsiDates.length).fill(70), borderColor: 'rgba(248,113,113,0.5)', borderDash: [5,5], borderWidth: 1, pointRadius: 0 },
+      { label: 'Oversold (30)',   data: Array(rsiDates.length).fill(30), borderColor: 'rgba(74,222,128,0.5)',  borderDash: [5,5], borderWidth: 1, pointRadius: 0 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, min: 20, max: 85 }
+    }
+  }
+});
+
+// ── 7. ANALYST CHART  ──
+new Chart(document.getElementById('analystChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Strong Buy', 'Buy', 'Hold', 'Sell'],
+    datasets: [
+      { label: 'NVDA', data: [10, 48, 2, 1], backgroundColor: 'rgba(118,185,0,0.7)', borderColor: nvdaColor, borderWidth: 2, borderRadius: 6 },
+      { label: 'AMD',  data: [5, 37, 9, 0],  backgroundColor: 'rgba(237,28,36,0.7)', borderColor: amdColor, borderWidth: 2, borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, beginAtZero: true, ticks: { stepSize: 10 } }
+    }
+  }
+});
+
+// ── 8. FUNDAMENTAL CHART  ──
+new Chart(document.getElementById('fundamentalChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Total Assets\n($B)', 'Shareholder\nEquity ($B)', 'Total Debt\n($B)', 'Cash &\nInvestments ($B)'],
+    datasets: [
+      { label: 'NVDA', data: [259.5, 195.5, 12.8, 80.6], backgroundColor: 'rgba(118,185,0,0.7)', borderColor: nvdaColor, borderWidth: 2, borderRadius: 6 },
+      { label: 'AME',  data: [79.6, 64.5, 3.9, 12.3],    backgroundColor: 'rgba(237,28,36,0.7)', borderColor: amdColor, borderWidth: 2, borderRadius: 6 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      x: { grid: { color: gridColor } },
+      y: { grid: { color: gridColor }, beginAtZero: true, ticks: { callback: v => '$' + v + 'B' } }
+    }
+  }
+});
+</script>
+</body>
+</html>
